@@ -12,7 +12,7 @@ import com.aws.codestar.projecttemplates.Response;
  */
 @RestController
 @RequestMapping("/")
-public class HelloWorldController {
+public class CryptoCoinController {
 
     private static final String MESSAGE_FORMAT = "Hello %s!";
 
