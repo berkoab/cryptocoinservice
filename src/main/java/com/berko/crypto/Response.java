@@ -1,4 +1,4 @@
-package com.aws.codestar.projecttemplates;
+package com.berko.crypto;
 
 /**
  * Basic POJO to contain a message.

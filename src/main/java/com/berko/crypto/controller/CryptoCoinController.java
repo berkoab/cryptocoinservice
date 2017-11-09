@@ -1,11 +1,11 @@
-package com.aws.codestar.projecttemplates.controller;
+package com.berko.crypto.controller;
 
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.berko.crypto.model.AddressInfo;
+import com.berko.crypto.repository.CryptoCoinRepo;
+import com.berko.crypto.Response;
+import org.springframework.web.bind.annotation.*;
 
-import com.aws.codestar.projecttemplates.Response;
+import javax.annotation.Resource;
 
 /**
  * Basic Spring web service controller that handles all GET requests.
@@ -13,6 +13,8 @@ import com.aws.codestar.projecttemplates.Response;
 @RestController
 @RequestMapping("/")
 public class CryptoCoinController {
+    @Resource
+    private CryptoCoinRepo repo;
 
     private static final String MESSAGE_FORMAT = "Hello %s!";
 
@@ -24,5 +26,11 @@ public class CryptoCoinController {
     @RequestMapping(method = RequestMethod.POST)
     public Response helloWorldPost(@RequestParam(value = "name", defaultValue = "World") String name) {
         return new Response(String.format(MESSAGE_FORMAT, name));
+    }
+
+    @RequestMapping(value="/info/{address}", method = RequestMethod.GET)
+    @ResponseBody
+    public AddressInfo getAddressInfo(@PathVariable String address) {
+        return repo.getInfo(address);
     }
 }
