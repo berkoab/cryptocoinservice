@@ -1,11 +1,12 @@
 package com.berko.crypto.controller;
 
-import com.berko.crypto.model.AddressInfo;
+import com.berko.crypto.model.SingleTransaction;
 import com.berko.crypto.repository.CryptoCoinRepo;
 import com.berko.crypto.Response;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * Basic Spring web service controller that handles all GET requests.
@@ -30,7 +31,7 @@ public class CryptoCoinController {
 
     @RequestMapping(value="/info/{address}", method = RequestMethod.GET)
     @ResponseBody
-    public AddressInfo getAddressInfo(@PathVariable String address) {
+    public List<SingleTransaction> getAddressInfo(@PathVariable String address) {
         return repo.getInfo(address);
     }
 }

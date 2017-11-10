@@ -2,12 +2,12 @@ package com.berko.crypto.model;
 
 import java.util.ArrayList;
 
-public class Transaction {
+public class SingleTransaction {
     public static enum Direction{INCOMING, OUTGOING}
 
     private String address;
     private ArrayList<String> outAddresses;
-    private Direction direction;
+    private Direction direction = null;
     private double totalInputs;
     private double totalOutputs;
 
@@ -59,15 +59,15 @@ public class Transaction {
         this.fees = fees;
     }
 
-    public double getTransactionAmount() {
+    public long getTransactionAmount() {
         return transactionAmount;
     }
 
-    public void setTransactionAmount(double transactionAmount) {
+    public void setTransactionAmount(long transactionAmount) {
         this.transactionAmount = transactionAmount;
     }
 
     private double fees;
-    private double transactionAmount;
+    private long transactionAmount;
 
 }
