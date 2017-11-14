@@ -3,6 +3,8 @@ package com.berko.crypto.repository;
 import com.berko.crypto.model.SingleTransaction;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class CryptoCoinRepoTest {
@@ -10,11 +12,11 @@ class CryptoCoinRepoTest {
     @Test
     public void getInfo() {
         CryptoCoinRepo repo = new CryptoCoinRepo();
-        System.out.println(repo.getInfo("1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F").get(1).getTransactionAmount());
-        assertEquals(46.0, repo.getInfo("1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F").get(0).getTransactionAmount());
-        assertEquals(SingleTransaction.Direction.OUTGOING, repo.getInfo("1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F").get(0).getDirection());
-//        assertEquals(0, balance);
-
+        List<SingleTransaction> transactions = repo.getTransactionInfo("1AJbsFZ64EpEfS5UAjAfcUG8pH8Jn3rn1F", Long.valueOf("0"),Long.valueOf("33071653339"));
+        assertEquals(46.783, transactions.get(0).getTransactionAmount());
+        assertEquals(SingleTransaction.Direction.OUTGOING, transactions.get(0).getDirection());
+        assertEquals(SingleTransaction.Direction.INCOMING, transactions.get(1).getDirection());
+        assertEquals(1.0, transactions.get(2).getTransactionAmount());
     }
 
 }

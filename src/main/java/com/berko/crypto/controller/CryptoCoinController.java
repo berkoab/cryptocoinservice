@@ -3,6 +3,7 @@ package com.berko.crypto.controller;
 import com.berko.crypto.model.SingleTransaction;
 import com.berko.crypto.repository.CryptoCoinRepo;
 import com.berko.crypto.Response;
+import info.blockchain.api.blockexplorer.entity.Address;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -31,7 +32,15 @@ public class CryptoCoinController {
 
     @RequestMapping(value="/info/{address}", method = RequestMethod.GET)
     @ResponseBody
-    public List<SingleTransaction> getAddressInfo(@PathVariable String address) {
+    public List<SingleTransaction> getTransactionInfo(@PathVariable String address,
+                                                      @RequestParam(value = "fromDate", defaultValue = "0") String fromDate,
+                                                      @RequestParam(value = "toDate", defaultValue = "33071653339") String toDate) {
+        return repo.getTransactionInfo(address, Long.valueOf(fromDate), Long.valueOf(toDate));
+    }
+
+    @RequestMapping(value="/info/{address}/all", method = RequestMethod.GET)
+    @ResponseBody
+    public Address getAddressInfo(@PathVariable String address) {
         return repo.getInfo(address);
     }
 }

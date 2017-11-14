@@ -18,51 +18,53 @@ import java.util.List;
 @Repository
 public class CryptoCoinRepo {
 
-//    public AddressInfo getInfo(String address) {
-//        HttpClient client = new HttpClient();
-//        AddressInfo info = new Gson().fromJson(client.getAddressInfo(address), AddressInfo.class);
-//
-//        List<Tx> transactions = info.getTxs();
-//        for(Tx tx:transactions) {
-//            SingleTransaction transaction = new SingleTransaction();
-//            List<Input> inputs = tx.getInputs();
-//            List<Out> outs = tx.getOut();
-//            for(Input in:inputs) {
-//                String inAddress = in.getPrevOut().getAddr();
-//                Long value = in.getPrevOut().getValue();
-//            }
-//            for(Out out:outs) {
-//                String outAddress = out.getAddr();
-//                Long outValue = out.getValue();
-//            }
-//        }
-//        return new Gson().fromJson(client.getAddressInfo(address), AddressInfo.class);
-//    }
+    public Address getInfo(String add) {
+        BlockExplorer blockExplorer = new BlockExplorer();
+        Address address = null;
+        try {
+            address = blockExplorer.getAddress(add);
+        } catch (APIException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return address;
+    }
 
-    public List<SingleTransaction> getInfo(String add) {
+    public List<SingleTransaction> getTransactionInfo(String add, long fromDate, long toDate) {
         BlockExplorer blockExplorer = new BlockExplorer();
         List<SingleTransaction> singleTransactions = new ArrayList<SingleTransaction>();
         try {
             Address address = blockExplorer.getAddress(add);
             List<Transaction> transactions = address.getTransactions();
             for (Transaction tx : transactions) {
+                if(tx.getTime()<fromDate||tx.getTime()>toDate) {
+                    continue;
+                }
                 SingleTransaction transact = new SingleTransaction();
-                transact.setAddress(add);
-                List<Input> inputs = tx.getInputs();
-                List<Output> outs = tx.getOutputs();
-                for (Input in : inputs) {
+                transact.setAddress((add));
+                transact.setTime(tx.getTime());
+                for (Input in : tx.getInputs()) {
                     if(in.getPreviousOutput().getAddress().equals(add)) {
+                        transact.getFromAddresses().clear();
+                        transact.getFromAddresses().add(add);
                         transact.setDirection(SingleTransaction.Direction.OUTGOING);
-                        transact.setTransactionAmount(in.getPreviousOutput().getValue() / 100000000);
+                        transact.setTransactionAmount((double)in.getPreviousOutput().getValue() / 100000000);
+                        break;
+                    } else {
+                        transact.getFromAddresses().add(in.getPreviousOutput().getAddress());
                     }
                 }
 
-                if(transact.getDirection()==null) {
-                    transact.setDirection(SingleTransaction.Direction.INCOMING);
-                    for (Output out : outs) {
-                        if(out.getAddress().equals(add)) {
-                            transact.setTransactionAmount(out.getValue()/100000000);
-                        }
+                for (Output out : tx.getOutputs()) {
+                    if(out.getAddress().equals(add)) {
+                        transact.setDirection(SingleTransaction.Direction.INCOMING);
+                        transact.setTransactionAmount((double)out.getValue()/100000000);
+                        transact.getToAddresses().clear();
+                        transact.getToAddresses().add(out.getAddress());
+                        break;
+                    } else {
+                        transact.getToAddresses().add(out.getAddress());
                     }
                 }
                 singleTransactions.add(transact);

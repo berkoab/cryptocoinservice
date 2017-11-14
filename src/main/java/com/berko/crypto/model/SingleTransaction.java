@@ -1,15 +1,42 @@
 package com.berko.crypto.model;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class SingleTransaction {
     public static enum Direction{INCOMING, OUTGOING}
 
     private String address;
-    private ArrayList<String> outAddresses;
+    private ArrayList<String> fromAddresses = new ArrayList<String>();
+    private ArrayList<String> toAddresses = new ArrayList<String>();
     private Direction direction = null;
-    private double totalInputs;
-    private double totalOutputs;
+    private double transactionAmount;
+    private long time;
+
+    public long getTime() {
+        return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
+    }
+
+    public ArrayList<String> getFromAddresses() {
+        return fromAddresses;
+    }
+
+    public void setFromAddresses(ArrayList<String> fromAddresses) {
+        this.fromAddresses = fromAddresses;
+    }
+
+    public ArrayList<String> getToAddresses() {
+        return toAddresses;
+    }
+
+    public void setToAddresses(ArrayList<String> toAddresses) {
+        this.toAddresses = toAddresses;
+    }
 
     public String getAddress() {
         return address;
@@ -17,14 +44,6 @@ public class SingleTransaction {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public ArrayList<String> getOutAddresses() {
-        return outAddresses;
-    }
-
-    public void setOutAddresses(ArrayList<String> outAddresses) {
-        this.outAddresses = outAddresses;
     }
 
     public Direction getDirection() {
@@ -35,39 +54,12 @@ public class SingleTransaction {
         this.direction = direction;
     }
 
-    public double getTotalInputs() {
-        return totalInputs;
-    }
-
-    public void setTotalInputs(double totalInputs) {
-        this.totalInputs = totalInputs;
-    }
-
-    public double getTotalOutputs() {
-        return totalOutputs;
-    }
-
-    public void setTotalOutputs(double totalOutputs) {
-        this.totalOutputs = totalOutputs;
-    }
-
-    public double getFees() {
-        return fees;
-    }
-
-    public void setFees(double fees) {
-        this.fees = fees;
-    }
-
-    public long getTransactionAmount() {
+    public double getTransactionAmount() {
         return transactionAmount;
     }
 
-    public void setTransactionAmount(long transactionAmount) {
+    public void setTransactionAmount(double transactionAmount) {
         this.transactionAmount = transactionAmount;
     }
-
-    private double fees;
-    private long transactionAmount;
 
 }
