@@ -12,7 +12,25 @@ public class SingleTransaction {
     private ArrayList<String> toAddresses = new ArrayList<String>();
     private Direction direction = null;
     private double transactionAmount;
+    private double historicalTransactAmount;
     private long time;
+    private String date;
+
+    public double getHistoricalTransactAmount() {
+        return historicalTransactAmount;
+    }
+
+    public void setHistoricalTransactAmount(double historicalTransactAmount) {
+        this.historicalTransactAmount = historicalTransactAmount;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
 
     public long getTime() {
         return time;

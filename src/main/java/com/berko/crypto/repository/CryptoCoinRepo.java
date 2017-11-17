@@ -1,22 +1,53 @@
 package com.berko.crypto.repository;
 
-//import com.berko.crypto.model.*;
-//import com.berko.crypto.model.AddressInfo;
+import com.berko.crypto.http.HttpClient;
+import com.berko.crypto.model.Price;
 import com.berko.crypto.model.SingleTransaction;
-        import info.blockchain.api.APIException;
+
+
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import info.blockchain.api.APIException;
 import info.blockchain.api.blockexplorer.BlockExplorer;
 import info.blockchain.api.blockexplorer.entity.Address;
 import info.blockchain.api.blockexplorer.entity.Input;
 import info.blockchain.api.blockexplorer.entity.Output;
 import info.blockchain.api.blockexplorer.entity.Transaction;
+
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.Morphia;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+
+import java.util.Date;
 import java.util.List;
 
 @Repository
 public class CryptoCoinRepo {
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private HttpClient httpClient;
+    Datastore datastore = null;
+
+    public CryptoCoinRepo() {
+        httpClient = new HttpClient();
+        MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://berkoab:Gemorah1@" +
+                "bitcoinprices-shard-00-00-avqra.mongodb.net:27017," +
+                "bitcoinprices-shard-00-01-avqra.mongodb.net:27017," +
+                "bitcoinprices-shard-00-02-avqra.mongodb.net:27017" +
+                "/test?ssl=true&replicaSet=bitcoinprices-shard-0&authSource=admin"));
+
+        Morphia morphia = new Morphia();
+        morphia.mapPackage("com.berko.crypto.model");
+        datastore = morphia.createDatastore(mongoClient, "bitcoin");
+        datastore.ensureIndexes();
+    }
 
     public Address getInfo(String add) {
         BlockExplorer blockExplorer = new BlockExplorer();
@@ -31,25 +62,29 @@ public class CryptoCoinRepo {
         return address;
     }
 
-    public List<SingleTransaction> getTransactionInfo(String add, long fromDate, long toDate) {
+    public List<SingleTransaction> getTransactionInfo(String add, long fromDate, long toDate, String currency) {
         BlockExplorer blockExplorer = new BlockExplorer();
+
         List<SingleTransaction> singleTransactions = new ArrayList<SingleTransaction>();
         try {
             Address address = blockExplorer.getAddress(add);
             List<Transaction> transactions = address.getTransactions();
             for (Transaction tx : transactions) {
-                if(tx.getTime()<fromDate||tx.getTime()>toDate) {
+                long time = tx.getTime();
+                if(time<fromDate||time>toDate) {
                     continue;
                 }
+
                 SingleTransaction transact = new SingleTransaction();
                 transact.setAddress((add));
-                transact.setTime(tx.getTime());
+                transact.setTime(time);
+                transact.setDate(timeToString(time));
                 for (Input in : tx.getInputs()) {
                     if(in.getPreviousOutput().getAddress().equals(add)) {
                         transact.getFromAddresses().clear();
                         transact.getFromAddresses().add(add);
                         transact.setDirection(SingleTransaction.Direction.OUTGOING);
-                        transact.setTransactionAmount((double)in.getPreviousOutput().getValue() / 100000000);
+                        setAmounts(transact, in.getPreviousOutput().getValue(), time, currency);
                         break;
                     } else {
                         transact.getFromAddresses().add(in.getPreviousOutput().getAddress());
@@ -59,7 +94,7 @@ public class CryptoCoinRepo {
                 for (Output out : tx.getOutputs()) {
                     if(out.getAddress().equals(add)) {
                         transact.setDirection(SingleTransaction.Direction.INCOMING);
-                        transact.setTransactionAmount((double)out.getValue()/100000000);
+                        setAmounts(transact, out.getValue(), time, currency);
                         transact.getToAddresses().clear();
                         transact.getToAddresses().add(out.getAddress());
                         break;
@@ -76,5 +111,45 @@ public class CryptoCoinRepo {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private Date timeToDate(long time) {
+        ZonedDateTime historicalDate = ZonedDateTime.ofInstant(Instant.ofEpochSecond(time), ZoneId.systemDefault())
+                .truncatedTo(ChronoUnit.DAYS);
+        return Date.from(historicalDate.toInstant());
+    }
+
+    private String timeToString(long time) {
+        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(time), ZoneId.systemDefault())
+                .truncatedTo(ChronoUnit.DAYS)
+                .format(formatter);
+    }
+
+    private void setAmounts(SingleTransaction transact, long btc, long time, String currency) {
+        double amount = (double)btc / 100000000;
+        transact.setTransactionAmount(amount);
+
+        //try mongo
+        List<Price> prices = datastore.createQuery(Price.class)
+                .field("date").equal(timeToDate(time))
+                .field("currency").equal(currency)
+                .asList();
+        if(prices.size()>0) {
+            transact.setHistoricalTransactAmount(prices.get(0).getPrice()*amount);
+        } else {
+            double price = httpClient.getHistoricalPrice(time, currency, timeToString(time));
+            transact.setHistoricalTransactAmount(price * amount);
+            writePriceToMongo(currency, timeToDate(time), price);
+        }
+    }
+
+
+    private void writePriceToMongo(String currency, Date date, double pr) {
+        Price price = new Price();
+        price.setCurrency(currency);
+        price.setDate(date);
+        price.setPrice(pr);
+//        collection.insertOne(price);
+        datastore.save(price);
     }
 }

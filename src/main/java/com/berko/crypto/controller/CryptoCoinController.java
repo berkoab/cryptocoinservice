@@ -34,8 +34,9 @@ public class CryptoCoinController {
     @ResponseBody
     public List<SingleTransaction> getTransactionInfo(@PathVariable String address,
                                                       @RequestParam(value = "fromDate", defaultValue = "0") String fromDate,
-                                                      @RequestParam(value = "toDate", defaultValue = "33071653339") String toDate) {
-        return repo.getTransactionInfo(address, Long.valueOf(fromDate), Long.valueOf(toDate));
+                                                      @RequestParam(value = "toDate", defaultValue = "33071653339") String toDate,
+                                                      @RequestParam(value = "currency", defaultValue = "USD") String currency) {
+        return repo.getTransactionInfo(address, Long.valueOf(fromDate), Long.valueOf(toDate), currency);
     }
 
     @RequestMapping(value="/info/{address}/all", method = RequestMethod.GET)
