@@ -5,6 +5,7 @@ import com.berko.crypto.model.Price;
 import com.berko.crypto.model.SingleTransaction;
 
 
+import com.berko.crypto.utils.TimeUtils;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import info.blockchain.api.APIException;
@@ -19,11 +20,7 @@ import org.mongodb.morphia.Morphia;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
 import java.util.Date;
@@ -62,7 +59,7 @@ public class CryptoCoinRepo {
         return address;
     }
 
-    public List<SingleTransaction> getTransactionInfo(String add, long fromDate, long toDate, String currency) {
+    public List<SingleTransaction> getTransactionInfo(String add, String fromDate, String toDate, String currency) {
         BlockExplorer blockExplorer = new BlockExplorer();
 
         List<SingleTransaction> singleTransactions = new ArrayList<SingleTransaction>();
@@ -71,14 +68,15 @@ public class CryptoCoinRepo {
             List<Transaction> transactions = address.getTransactions();
             for (Transaction tx : transactions) {
                 long time = tx.getTime();
-                if(time<fromDate||time>toDate) {
+                if(TimeUtils.timeToDate(time).compareTo(TimeUtils.stringToDate(fromDate))<0
+                        ||TimeUtils.timeToDate(time).compareTo(TimeUtils.stringToDate(toDate))>0) {
                     continue;
                 }
 
                 SingleTransaction transact = new SingleTransaction();
                 transact.setAddress((add));
                 transact.setTime(time);
-                transact.setDate(timeToString(time));
+                transact.setDate(TimeUtils.timeToString(time));
                 for (Input in : tx.getInputs()) {
                     if(in.getPreviousOutput().getAddress().equals(add)) {
                         transact.getFromAddresses().clear();
@@ -113,33 +111,21 @@ public class CryptoCoinRepo {
         return null;
     }
 
-    private Date timeToDate(long time) {
-        ZonedDateTime historicalDate = ZonedDateTime.ofInstant(Instant.ofEpochSecond(time), ZoneId.systemDefault())
-                .truncatedTo(ChronoUnit.DAYS);
-        return Date.from(historicalDate.toInstant());
-    }
-
-    private String timeToString(long time) {
-        return ZonedDateTime.ofInstant(Instant.ofEpochSecond(time), ZoneId.systemDefault())
-                .truncatedTo(ChronoUnit.DAYS)
-                .format(formatter);
-    }
-
     private void setAmounts(SingleTransaction transact, long btc, long time, String currency) {
         double amount = (double)btc / 100000000;
         transact.setTransactionAmount(amount);
 
         //try mongo
         List<Price> prices = datastore.createQuery(Price.class)
-                .field("date").equal(timeToDate(time))
+                .field("date").equal(TimeUtils.timeToDate(time))
                 .field("currency").equal(currency)
                 .asList();
         if(prices.size()>0) {
             transact.setHistoricalTransactAmount(prices.get(0).getPrice()*amount);
         } else {
-            double price = httpClient.getHistoricalPrice(time, currency, timeToString(time));
+            double price = httpClient.getHistoricalPrice(time, currency, TimeUtils.timeToString(time));
             transact.setHistoricalTransactAmount(price * amount);
-            writePriceToMongo(currency, timeToDate(time), price);
+            writePriceToMongo(currency, TimeUtils.timeToDate(time), price);
         }
     }
 
