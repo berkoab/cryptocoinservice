@@ -4,9 +4,11 @@ import com.berko.crypto.model.SingleTransaction;
 import com.berko.crypto.repository.CryptoCoinRepo;
 import com.berko.crypto.Response;
 import info.blockchain.api.blockexplorer.entity.Address;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -33,9 +35,12 @@ public class CryptoCoinController {
     @RequestMapping(value="/info/{address}", method = RequestMethod.GET)
     @ResponseBody
     public List<SingleTransaction> getTransactionInfo(@PathVariable String address,
-                                                      @RequestParam(value = "fromDate", defaultValue = "0") String fromDate,
-                                                      @RequestParam(value = "toDate", defaultValue = "33071653339") String toDate,
-                                                      @RequestParam(value = "currency", defaultValue = "USD") String currency) {
+                                                      @RequestParam(value = "fromDate", defaultValue = "1970-01-01") String fromDate,
+                                                      @RequestParam(value = "toDate", defaultValue = "2030-12-31") String toDate,
+                                                      @RequestParam(value = "currency", defaultValue = "USD") String currency,
+                                                      HttpServletResponse response) {
+
+        response.addHeader("Access-Control-Allow-Origin", "*");
         return repo.getTransactionInfo(address, fromDate, toDate, currency);
     }
 

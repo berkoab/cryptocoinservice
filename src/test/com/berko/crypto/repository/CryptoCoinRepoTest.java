@@ -20,5 +20,4 @@ class CryptoCoinRepoTest {
         assertEquals(1.0, transactions.get(2).getTransactionAmount());
         assertEquals(263.528639, transactions.get(0).getHistoricalTransactAmount());
     }
-
 }
