@@ -3,18 +3,21 @@ package com.berko.crypto.model;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
-public class SingleTransaction {
+public class AddressInfo {
     public static enum Direction{INCOMING, OUTGOING}
 
     private String address;
-    private ArrayList<String> fromAddresses = new ArrayList<String>();
-    private ArrayList<String> toAddresses = new ArrayList<String>();
+    private Set<String> fromAddresses = new HashSet<String>();
+    private Set<String> toAddresses = new HashSet<String>();
     private Direction direction = null;
     private double transactionAmount;
     private double historicalTransactAmount;
     private long time;
     private String date;
+    private String transactionId;
 
     public double getHistoricalTransactAmount() {
         return historicalTransactAmount;
@@ -40,19 +43,19 @@ public class SingleTransaction {
         this.time = time;
     }
 
-    public ArrayList<String> getFromAddresses() {
+    public Set<String> getFromAddresses() {
         return fromAddresses;
     }
 
-    public void setFromAddresses(ArrayList<String> fromAddresses) {
+    public void setFromAddresses(Set<String> fromAddresses) {
         this.fromAddresses = fromAddresses;
     }
 
-    public ArrayList<String> getToAddresses() {
+    public Set<String> getToAddresses() {
         return toAddresses;
     }
 
-    public void setToAddresses(ArrayList<String> toAddresses) {
+    public void setToAddresses(Set<String> toAddresses) {
         this.toAddresses = toAddresses;
     }
 
@@ -80,4 +83,11 @@ public class SingleTransaction {
         this.transactionAmount = transactionAmount;
     }
 
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
 }

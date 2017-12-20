@@ -2,9 +2,10 @@ package com.berko.crypto.repository;
 
 import com.berko.crypto.http.HttpClient;
 import com.berko.crypto.model.Price;
-import com.berko.crypto.model.SingleTransaction;
+import com.berko.crypto.model.AddressInfo;
 
 
+import com.berko.crypto.model.TransactionInfo;
 import com.berko.crypto.utils.TimeUtils;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
@@ -59,10 +60,10 @@ public class CryptoCoinRepo {
         return address;
     }
 
-    public List<SingleTransaction> getTransactionInfo(String add, String fromDate, String toDate, String currency) {
+    public List<AddressInfo> getAddressInfo(String add, String fromDate, String toDate, String currency) {
         BlockExplorer blockExplorer = new BlockExplorer();
 
-        List<SingleTransaction> singleTransactions = new ArrayList<SingleTransaction>();
+        List<AddressInfo> singleTransactions = new ArrayList<AddressInfo>();
         try {
             Address address = blockExplorer.getAddress(add);
             List<Transaction> transactions = address.getTransactions();
@@ -73,15 +74,16 @@ public class CryptoCoinRepo {
                     continue;
                 }
 
-                SingleTransaction transact = new SingleTransaction();
-                transact.setAddress((add));
+                AddressInfo transact = new AddressInfo();
+                transact.setTransactionId(tx.getHash());
+                transact.setAddress(add);
                 transact.setTime(time);
                 transact.setDate(TimeUtils.timeToString(time));
                 for (Input in : tx.getInputs()) {
                     if(in.getPreviousOutput().getAddress().equals(add)) {
                         transact.getFromAddresses().clear();
                         transact.getFromAddresses().add(add);
-                        transact.setDirection(SingleTransaction.Direction.OUTGOING);
+                        transact.setDirection(AddressInfo.Direction.OUTGOING);
                         setAmounts(transact, in.getPreviousOutput().getValue(), time, currency);
                         break;
                     } else {
@@ -91,7 +93,7 @@ public class CryptoCoinRepo {
 
                 for (Output out : tx.getOutputs()) {
                     if(out.getAddress().equals(add)) {
-                        transact.setDirection(SingleTransaction.Direction.INCOMING);
+                        transact.setDirection(AddressInfo.Direction.INCOMING);
                         setAmounts(transact, out.getValue(), time, currency);
                         transact.getToAddresses().clear();
                         transact.getToAddresses().add(out.getAddress());
@@ -111,24 +113,57 @@ public class CryptoCoinRepo {
         return null;
     }
 
-    private void setAmounts(SingleTransaction transact, long btc, long time, String currency) {
+    public TransactionInfo getTransactionInfo(String hash, String currency) {
+        BlockExplorer blockExplorer = new BlockExplorer();
+        TransactionInfo transact = new TransactionInfo();
+        try {
+            Transaction tx = blockExplorer.getTransaction(hash);
+
+            transact.setTransactionId(tx.getHash());
+            long time = tx.getTime();
+            transact.setTime(time);
+            transact.setDate(TimeUtils.timeToString(time));
+            for (Input in : tx.getInputs()) {
+                Output output = in.getPreviousOutput();
+                double amount = (double)output.getValue() / 100000000;
+                transact.getOutgoingBitcoin().put(output.getAddress(), amount);
+                transact.getOutgoingCurrency().put(output.getAddress(),  getPrice(time, currency)*amount);
+            }
+            for(Output out : tx.getOutputs()) {
+                double amount = (double)out.getValue() / 100000000;
+                transact.getIncomingBitcoin().put(out.getAddress(), amount);
+                transact.getIncomingCurrency().put(out.getAddress(),  getPrice(time, currency)*amount);
+            }
+        } catch (APIException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return transact;
+    }
+
+    private void setAmounts(AddressInfo transact, long btc, long time, String currency) {
         double amount = (double)btc / 100000000;
         transact.setTransactionAmount(amount);
 
-        //try mongo
+        double price = getPrice(time, currency);
+        transact.setHistoricalTransactAmount(price*amount);
+    }
+
+    private double getPrice(long time, String currency) {
         List<Price> prices = datastore.createQuery(Price.class)
                 .field("date").equal(TimeUtils.timeToDate(time))
                 .field("currency").equal(currency)
                 .asList();
         if(prices.size()>0) {
-            transact.setHistoricalTransactAmount(prices.get(0).getPrice()*amount);
+            return prices.get(0).getPrice();
         } else {
             double price = httpClient.getHistoricalPrice(time, currency, TimeUtils.timeToString(time));
-            transact.setHistoricalTransactAmount(price * amount);
             writePriceToMongo(currency, TimeUtils.timeToDate(time), price);
+            return price;
         }
     }
-
 
     private void writePriceToMongo(String currency, Date date, double pr) {
         Price price = new Price();
